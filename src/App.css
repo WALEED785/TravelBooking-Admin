@@ -1,0 +1,12 @@
+.MuiDrawer-paper {
+  width: var(--sidebar-width) !important;
+  background-color: var(--surface) !important;
+  transition: background-color 0.3s ease;
+}
+
+.MuiAppBar-root {
+  height: var(--topbar-height) !important;
+  background-color: var(--primary-main) !important;
+  color: white;
+  transition: background-color 0.3s ease;
+}
