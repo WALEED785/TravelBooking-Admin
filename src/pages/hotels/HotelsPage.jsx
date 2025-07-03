@@ -179,7 +179,7 @@ const HotelsPage = () => {
                     />
                   </TableCell>
                   <TableCell>{hotel.destination?.name}</TableCell>
-                  <TableCell>${hotel.pricePerNight?.toFixed(2)}</TableCell>
+                  <TableCell>PKR: {hotel.pricePerNight?.toFixed(2)}/-</TableCell>
                   <TableCell>{renderRating(hotel.rating)}</TableCell>
                   <TableCell>
                     {hotel.amenities?.split(', ').map((amenity, index) => (

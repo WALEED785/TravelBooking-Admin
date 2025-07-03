@@ -114,7 +114,7 @@ const FlightsPage = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Flight ID</TableCell>
+              <TableCell>Sr #</TableCell>
               <TableCell>Airline</TableCell>
               <TableCell>Route</TableCell>
               <TableCell>Departure</TableCell>
@@ -124,9 +124,9 @@ const FlightsPage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {flights.map((flight) => (
+            {flights.map((flight, index) => (
               <TableRow key={flight.flightId}>
-                <TableCell>{flight.flightId}</TableCell>
+                <TableCell>{ index+1 }</TableCell>
                 <TableCell>
                   <Chip 
                     icon={<FlightIcon />} 
@@ -135,11 +135,11 @@ const FlightsPage = () => {
                   />
                 </TableCell>
                 <TableCell>
-                  {flight.departureDestination?.name} → {flight.arrivalDestination?.name}
+                  {flight.departureDestination} → {flight.arrivalDestination}
                 </TableCell>
                 <TableCell>{formatFlightDate(flight.departureTime)}</TableCell>
                 <TableCell>{formatFlightDate(flight.arrivalTime)}</TableCell>
-                <TableCell>${flight.price.toFixed(2)}</TableCell>
+                <TableCell>PKR: {flight.price.toFixed(2)}/-</TableCell>
                 <TableCell>
                   <IconButton 
                     color="primary" 

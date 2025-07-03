@@ -159,3 +159,14 @@ export const deleteFlight = async (id) => {
     handleError(error, `Failed to delete flight with ID ${id}`);
   }
 };
+
+export const getFlightsByDestination = async (destinationId) => {
+  try {
+    debugger
+    const response = await api.get(`https://localhost:7060/api/flights/destination/${destinationId}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching hotels for destination ${destinationId}:`, error);
+    throw error.response?.data || error.message;
+  }
+};

@@ -1,14 +1,28 @@
 // src/hooks/useFlights.js
 import { useState, useCallback, useEffect } from 'react';
-import { 
-  getFlights, 
-  searchFlights,
-  getFlightById, 
-  createFlight as createFlightService, 
-  updateFlight as updateFlightService, 
-  deleteFlight as deleteFlightService 
+import {
+  getFlights,
+  searchFlights as searchFlightsService,
+  getFlightById,
+  createFlight as createFlightService,
+  updateFlight as updateFlightService,
+  deleteFlight as deleteFlightService,
+  getFlightsByDestination as getFlightsByDestinationService
 } from '../services/flightService';
 
+/* ----------------------------------------------------------
+ *  Shared helpers
+ * -------------------------------------------------------- */
+const buildError = (err, fallback) => ({
+  message: err?.message || fallback,
+  status: err?.status,
+  details: err?.details,
+  isNetworkError: err?.networkError || !err?.response
+});
+
+/* ----------------------------------------------------------
+ *  1️⃣  Hook: useFlights — list or search
+ * -------------------------------------------------------- */
 export const useFlights = (autoFetch = true) => {
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(autoFetch);
@@ -19,43 +33,63 @@ export const useFlights = (autoFetch = true) => {
       setLoading(true);
       setError(null);
       const data = await getFlights();
-      
-      if (Array.isArray(data)) {
-        setFlights(data);
-      } else {
-        throw new Error('Invalid data format received from server');
-      }
+      if (!Array.isArray(data)) throw new Error('Invalid data format');
+      setFlights(data);
     } catch (err) {
-      setError({
-        message: err.message || 'Failed to load flights',
-        status: err.status,
-        details: err.details,
-        isNetworkError: !err.response
-      });
+      setError(buildError(err, 'Failed to load flights'));
       setFlights([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const search = useCallback(async (departureId, arrivalId, date) => {
+  const searchFlights = useCallback(async (departureId, arrivalId, date) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await searchFlights(departureId, arrivalId, date);
-      
-      if (Array.isArray(data)) {
-        setFlights(data);
-      } else {
-        throw new Error('Invalid data format received from server');
-      }
+      const data = await searchFlightsService(departureId, arrivalId, date);
+      if (!Array.isArray(data)) throw new Error('Invalid data format');
+      setFlights(data);
     } catch (err) {
-      setError({
-        message: err.message || 'Failed to search flights',
-        status: err.status,
-        details: err.details,
-        isNetworkError: !err.response
-      });
+      setError(buildError(err, 'Failed to search flights'));
+      setFlights([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  /* initial fetch */
+  useEffect(() => {
+    if (autoFetch) fetchFlights();
+  }, [autoFetch, fetchFlights]);
+
+  return {
+    flights,
+    loading,
+    error,
+    fetchFlights,
+    searchFlights,
+    isEmpty: !loading && flights.length === 0
+  };
+};
+
+/* ----------------------------------------------------------
+ *  2️⃣  Hook: useFlightsByDestination — list by destination
+ * -------------------------------------------------------- */
+export const useFlightsByDestination = (destinationId) => {
+  const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(!!destinationId);
+  const [error, setError] = useState(null);
+
+  const fetchFlightsByDestination = useCallback(async (id) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getFlightsByDestinationService(id);
+      if (!Array.isArray(data)) throw new Error('Invalid data format');
+      setFlights(data);
+    } catch (err) {
+      setError(buildError(err, `Failed to load flights for destination ${id}`));
       setFlights([]);
     } finally {
       setLoading(false);
@@ -63,21 +97,21 @@ export const useFlights = (autoFetch = true) => {
   }, []);
 
   useEffect(() => {
-    if (autoFetch) {
-      fetchFlights();
-    }
-  }, [autoFetch, fetchFlights]);
+    if (destinationId) fetchFlightsByDestination(destinationId);
+  }, [destinationId, fetchFlightsByDestination]);
 
-  return { 
-    flights, 
-    loading, 
-    error, 
-    fetchFlights,
-    searchFlights: search,
-    isEmpty: !loading && flights.length === 0 
+  return {
+    flights,
+    loading,
+    error,
+    fetchFlightsByDestination,
+    isEmpty: !loading && flights.length === 0
   };
 };
 
+/* ----------------------------------------------------------
+ *  3️⃣  Hook: useFlight — single flight
+ * -------------------------------------------------------- */
 export const useFlight = (id) => {
   const [flight, setFlight] = useState(null);
   const [loading, setLoading] = useState(!!id);
@@ -88,19 +122,10 @@ export const useFlight = (id) => {
       setLoading(true);
       setError(null);
       const data = await getFlightById(flightId);
-      
-      if (data && data.flightId) {
-        setFlight(data);
-      } else {
-        throw new Error('Invalid flight data received');
-      }
+      if (!data?.flightId) throw new Error('Invalid flight data');
+      setFlight(data);
     } catch (err) {
-      setError({
-        message: err.message || `Failed to load flight ${flightId}`,
-        status: err.status,
-        details: err.details,
-        isNetworkError: !err.response
-      });
+      setError(buildError(err, `Failed to load flight ${flightId}`));
       setFlight(null);
     } finally {
       setLoading(false);
@@ -108,15 +133,13 @@ export const useFlight = (id) => {
   }, []);
 
   useEffect(() => {
-    if (id) {
-      fetchFlight(id);
-    }
+    if (id) fetchFlight(id);
   }, [id, fetchFlight]);
 
-  return { 
-    flight, 
-    loading, 
-    error, 
+  return {
+    flight,
+    loading,
+    error,
     fetchFlight,
     reset: () => {
       setFlight(null);
@@ -125,6 +148,9 @@ export const useFlight = (id) => {
   };
 };
 
+/* ----------------------------------------------------------
+ *  4️⃣  Hook: useFlightMutation — create / update / delete
+ * -------------------------------------------------------- */
 export const useFlightMutation = () => {
   const [state, setState] = useState({
     loading: false,
@@ -134,72 +160,28 @@ export const useFlightMutation = () => {
   });
 
   const resetState = useCallback(() => {
-    setState({
-      loading: false,
-      error: null,
-      success: false,
-      data: null
-    });
+    setState({ loading: false, error: null, success: false, data: null });
   }, []);
 
-  const mutate = useCallback(async (mutationFn, ...args) => {
+  const mutate = useCallback(async (fn, ...args) => {
     try {
-      setState(prev => ({
-        ...prev,
-        loading: true,
-        error: null,
-        success: false
-      }));
-      
-      const result = await mutationFn(...args);
-      
-      setState({
-        loading: false,
-        error: null,
-        success: true,
-        data: result
-      });
-      
+      setState((s) => ({ ...s, loading: true, error: null, success: false }));
+      const result = await fn(...args);
+      setState({ loading: false, error: null, success: true, data: result });
       return result;
     } catch (err) {
-      console.error('Flight mutation error:', err);
-      
-      const errorObj = {
-        message: err.message || 'Operation failed',
-        status: err.status,
-        details: err.details,
-        isNetworkError: !err.response
-      };
-      
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: errorObj,
-        success: false
-      }));
-      
-      throw errorObj;
+      const errObj = buildError(err, 'Operation failed');
+      setState({ loading: false, error: errObj, success: false, data: null });
+      throw errObj;
     }
   }, []);
-
-  const createFlight = useCallback(async (data) => {
-    return mutate(createFlightService, data);
-  }, [mutate]);
-
-  const updateFlight = useCallback(async (id, data) => {
-    return mutate(updateFlightService, id, data);
-  }, [mutate]);
-
-  const deleteFlight = useCallback(async (id) => {
-    return mutate(deleteFlightService, id);
-  }, [mutate]);
 
   return {
     ...state,
     resetState,
-    createFlight,
-    updateFlight,
-    deleteFlight,
+    createFlight: (data) => mutate(createFlightService, data),
+    updateFlight: (id, data) => mutate(updateFlightService, id, data),
+    deleteFlight: (id) => mutate(deleteFlightService, id),
     isError: !!state.error,
     isSuccess: state.success
   };
