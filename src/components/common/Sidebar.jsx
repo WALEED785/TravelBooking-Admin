@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../hooks/useAuth';
 import { 
   Home, 
   Plane, 
@@ -8,40 +9,63 @@ import {
   MapPin, 
   CalendarDays,
   User,
+  Users,
   Settings,
   LogOut 
 } from 'lucide-react';
+
 const Sidebar = () => {
   const { sidebarCollapsed, isMobile, sidebarOpen, closeSidebar } = useTheme();
+  const { user, logout } = useAuth();
   const location = useLocation();
 
-  const navigationItems = [
+  // Check if user is admin
+  const isAdmin = user?.role === 'Admin';
+
+  // All navigation items
+  const allNavigationItems = [
     {
       path: '/dashboard',
       name: 'Dashboard',
-      icon: <Home size={20} className="sidebar-nav-icon" />
+      icon: <Home size={20} className="sidebar-nav-icon" />,
+      roles: ['Admin', 'User'] // Available for both admin and user
     },
     {
       path: '/bookings',
       name: 'Bookings',
-      icon: <CalendarDays size={20} className="sidebar-nav-icon" />
+      icon: <CalendarDays size={20} className="sidebar-nav-icon" />,
+      roles: ['Admin', 'User'] // Available for both admin and user
     },
     {
       path: '/flights',
       name: 'Flights',
-      icon: <Plane size={20} className="sidebar-nav-icon" />
+      icon: <Plane size={20} className="sidebar-nav-icon" />,
+      roles: ['Admin', 'User'] // Available for both admin and user
     },
     {
       path: '/hotels',
       name: 'Hotels',
-      icon: <Hotel size={20} className="sidebar-nav-icon" />
+      icon: <Hotel size={20} className="sidebar-nav-icon" />,
+      roles: ['Admin', 'User'] // Available for both admin and user
     },
     {
       path: '/destinations',
       name: 'Destinations',
-      icon: <MapPin size={20} className="sidebar-nav-icon" />
+      icon: <MapPin size={20} className="sidebar-nav-icon" />,
+      roles: ['Admin'] // Only available for admin
+    },
+    {
+      path: '/users',
+      name: 'Users',
+      icon: <Users size={20} className="sidebar-nav-icon" />,
+      roles: ['Admin'] // Only available for admin
     }
   ];
+
+  // Filter navigation items based on user role
+  const navigationItems = allNavigationItems.filter(item => 
+    item.roles.includes(user?.role)
+  );
 
   const bottomNavigationItems = [
     {
@@ -60,6 +84,11 @@ const Sidebar = () => {
     if (isMobile) {
       closeSidebar();
     }
+  };
+
+  const handleLogout = () => {
+    handleLinkClick();
+    logout();
   };
 
   const sidebarClasses = `sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${isMobile && sidebarOpen ? 'open' : ''}`;
@@ -124,10 +153,7 @@ const Sidebar = () => {
                   key={item.path}
                   to={item.path}
                   className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
-                  onClick={item.path === '/logout' ? () => {
-                    handleLinkClick();
-                    // Add logout logic here
-                  } : handleLinkClick}
+                  onClick={item.path === '/logout' ? handleLogout : handleLinkClick}
                 >
                   <span className="sidebar-nav-icon-wrapper">
                     {item.icon}

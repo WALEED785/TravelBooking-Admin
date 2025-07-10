@@ -47,6 +47,7 @@ const BookingsPage = () => {
       setLoading(true);
       setError(null);
       const data = await getBookings();
+      console.log('Fetched bookings:', data);
       setBookings(data);
     } catch (err) {
       setError(err.message || 'Failed to fetch bookings');
@@ -131,7 +132,7 @@ const BookingsPage = () => {
                     <TableCell>{ index+1 }</TableCell>
                     <TableCell><Chip icon={icon} label={type} /></TableCell>
                     <TableCell>
-                      {type === 'Hotel' ? `Hotel ID: ${booking.hotelId}` : `Flight ID: ${booking.flightId}`}
+                      {type === 'Hotel' ? `${booking.hotelName}` : `${booking.flightName}`}
                     </TableCell>
                     <TableCell>${booking.totalPrice.toFixed(2)}</TableCell>
                     <TableCell>

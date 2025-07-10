@@ -1,37 +1,71 @@
-import api from './api';  // Import the default export instead of named export
+// src/utils/auth.js
+import { authService } from '../services/authService';
 
-export const login = async (credentials) => {
-  try {
-    const response = await api.post('/User/login', credentials);
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('user', JSON.stringify(response.data.user));
-    return response.data;
-  } catch (error) {
-    console.error('Login failed:', error);
-    throw error;
-  }
-};
-
-export const register = async (userData) => {
-  try {
-    const response = await api.post('/User/register', userData);
-    return response.data;
-  } catch (error) {
-    console.error('Registration failed:', error);
-    throw error;
-  }
-};
-
-export const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-};
-
+// Check if user is authenticated
 export const isAuthenticated = () => {
-  return !!localStorage.getItem('token');
+  return authService.isAuthenticated();
 };
 
+// Get current user
 export const getCurrentUser = () => {
-  const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+  return authService.getCurrentUser();
+};
+
+// Get auth token
+export const getAuthToken = () => {
+  return authService.getToken();
+};
+
+// Logout user
+export const logout = () => {
+  authService.logout();
+};
+
+// Check if user has specific role
+export const hasRole = (role) => {
+  const user = getCurrentUser();
+  return user?.role === role;
+};
+
+// Check if user is admin
+export const isAdmin = () => {
+  return hasRole('Admin');
+};
+
+// Check if user is regular user
+export const isUser = () => {
+  return hasRole('User');
+};
+
+// Get user role
+export const getUserRole = () => {
+  const user = getCurrentUser();
+  return user?.role || null;
+};
+
+// Check if token is expired
+export const isTokenExpired = () => {
+  const user = getCurrentUser();
+  if (!user || !user.expiry) return true;
+  
+  return new Date(user.expiry) <= new Date();
+};
+
+// Format user display name
+export const getUserDisplayName = () => {
+  const user = getCurrentUser();
+  return user?.username || 'Guest';
+};
+
+// Legacy mock functions (for backward compatibility)
+export const mockLogin = (credentials) => {
+  // This is now handled by authService
+  console.warn('mockLogin is deprecated. Use authService.login instead.');
+  return null;
+};
+
+export const mockRegister = (userData) => {
+  // This is now handled by authService
+  console.warn('mockRegister is deprecated. Use authService.register instead.');
+  return null;
 };

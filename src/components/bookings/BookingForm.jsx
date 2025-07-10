@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import {
   Box, Button, TextField, Typography, Stack, MenuItem,
   FormControl, InputLabel, Select, Dialog, DialogTitle,
@@ -15,24 +14,23 @@ import {
   updateBooking
 } from '../../services/bookingService';
 import { getDestinations } from '../../services/destinationService';
-import { getFlightsByDestination } from '../../services/flightService'
-import { getHotelsByDestination } from '../../services/hotelService'
+import { getFlightsByDestination } from '../../services/flightService';
+import { getHotelsByDestination } from '../../services/hotelService';
 
-const BookingForm = ({ open, onClose }) => {
-  /* -------------------------------------------------- */
-  /* ****************** Local state ******************* */
-  /* -------------------------------------------------- */
-  const { id } = useParams();
-  const isEdit = Boolean(id);
+const BookingForm = ({ open, onClose, bookingId }) => {
+  const isEdit = Boolean(bookingId);
 
-  const [bookingType, setBookingType] = useState('');     // 'hotel' | 'flight'
+  const [bookingType, setBookingType] = useState('');
   const [destinations, setDestinations] = useState([]);
   const [destinationId, setDestinationId] = useState('');
   const [hotels, setHotels] = useState([]);
   const [flights, setFlights] = useState([]);
 
+  const storedUser = localStorage.getItem("user");
+  const userId = storedUser ? JSON.parse(storedUser).userId : null;
+
   const [form, setForm] = useState({
-    userId: 5,
+    userId: userId,
     hotelId: null,
     flightId: null,
     totalPrice: 0,
@@ -42,9 +40,6 @@ const BookingForm = ({ open, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  /* -------------------------------------------------- */
-  /* --------------- Initial data load ---------------- */
-  /* -------------------------------------------------- */
   useEffect(() => {
     if (!open) return;
 
@@ -53,10 +48,9 @@ const BookingForm = ({ open, onClose }) => {
         setLoading(true);
         setError(null);
 
-        // fetch all destinations in parallel with booking (if edit)
         const [destData, booking] = await Promise.all([
           getDestinations(),
-          isEdit ? getBookingById(id) : Promise.resolve(null)
+          isEdit ? getBookingById(bookingId) : Promise.resolve(null)
         ]);
 
         setDestinations(destData);
@@ -72,6 +66,17 @@ const BookingForm = ({ open, onClose }) => {
             totalPrice: booking.totalPrice,
             status: booking.status
           });
+        } else {
+          // reset form for create
+          setBookingType('');
+          setDestinationId('');
+          setForm({
+            userId: userId,
+            hotelId: null,
+            flightId: null,
+            totalPrice: 0,
+            status: 'Confirmed'
+          });
         }
       } catch (err) {
         setError(err.message || 'Failed to load data');
@@ -81,11 +86,8 @@ const BookingForm = ({ open, onClose }) => {
     };
 
     init();
-  }, [id, isEdit, open]);
+  }, [bookingId, isEdit, open]);
 
-  /* -------------------------------------------------- */
-  /* --- When user picks a destination, fetch items --- */
-  /* -------------------------------------------------- */
   useEffect(() => {
     if (!destinationId || !bookingType) return;
 
@@ -110,9 +112,6 @@ const BookingForm = ({ open, onClose }) => {
     fetchItems();
   }, [destinationId, bookingType]);
 
-  /* -------------------------------------------------- */
-  /* ------------------ Handlers ---------------------- */
-  /* -------------------------------------------------- */
   const handleBookingType = (value) => {
     setBookingType(value);
     setForm(prev => ({ ...prev, hotelId: null, flightId: null }));
@@ -163,7 +162,7 @@ const BookingForm = ({ open, onClose }) => {
       };
 
       if (isEdit) {
-        await updateBooking(id, payload);
+        await updateBooking(bookingId, payload);
       } else {
         await createBooking(payload);
       }
@@ -176,9 +175,6 @@ const BookingForm = ({ open, onClose }) => {
     }
   };
 
-  /* -------------------------------------------------- */
-  /* ------------------- JSX -------------------------- */
-  /* -------------------------------------------------- */
   return (
     <Dialog open={open} onClose={() => onClose(false)} maxWidth="sm" fullWidth>
       <DialogTitle>
@@ -194,7 +190,6 @@ const BookingForm = ({ open, onClose }) => {
         <Stack spacing={3}>
           {error && <Alert severity="error">{error}</Alert>}
 
-          {/* 1️⃣ Booking type */}
           <FormControl fullWidth>
             <InputLabel>Booking Type</InputLabel>
             <Select
@@ -207,7 +202,6 @@ const BookingForm = ({ open, onClose }) => {
             </Select>
           </FormControl>
 
-          {/* 2️⃣ Destination */}
           {bookingType && (
             <FormControl fullWidth>
               <InputLabel>Destination</InputLabel>
@@ -225,7 +219,6 @@ const BookingForm = ({ open, onClose }) => {
             </FormControl>
           )}
 
-          {/* 3️⃣ Hotel / Flight */}
           {bookingType === 'hotel' && destinationId && (
             <FormControl fullWidth>
               <InputLabel>Select Hotel</InputLabel>
@@ -237,7 +230,7 @@ const BookingForm = ({ open, onClose }) => {
               >
                 {hotels.map(h => (
                   <MenuItem key={h.hotelId} value={h.hotelId}>
-                    {h.name} – ${h.pricePerNight}/night
+                    {h.name} – PKR {h.pricePerNight}/night
                   </MenuItem>
                 ))}
               </Select>
@@ -255,22 +248,20 @@ const BookingForm = ({ open, onClose }) => {
               >
                 {flights.map(f => (
                   <MenuItem key={f.flightId} value={f.flightId}>
-                    {f.airline} • {f.route} – ${f.price}
+                    {f.airline} • {f.route} – PKR {f.price}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
           )}
 
-          {/* Price (read‑only) */}
           <TextField
             label="Total Price"
-            value={`$${getPrice().toFixed(2)}`}
+            value={`PKR- ${getPrice().toFixed(2)}`}
             InputProps={{ readOnly: true }}
             fullWidth
           />
 
-          {/* Status (edit only) */}
           {isEdit && (
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>

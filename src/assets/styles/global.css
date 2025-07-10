@@ -70,7 +70,7 @@ body {
 
 /* Page Content Styles */
 .dashboard-page,
-.budget-page,
+.travel-page,
 .expenses-page,
 .ai-page,
 .login-page,
@@ -318,7 +318,7 @@ button {
   }
   
   .dashboard-page,
-  .budget-page,
+  .travel-page,
   .expenses-page,
   .ai-page,
   .login-page,

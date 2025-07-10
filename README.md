@@ -1,5 +1,5 @@
-Travel Booking & Budget Management System
-A full-featured Travel Booking and Budget Management web application built with React, offering functionality to manage Flights, Hotels, Bookings, Destinations, and Travel Profiles. The system supports light/dark modes and is designed for extensibility.
+Travel Booking Management System
+A full-featured Travel Booking  Management web application built with React, offering functionality to manage Flights, Hotels, Bookings, Destinations, and Travel Profiles. The system supports light/dark modes and is designed for extensibility.
 
 ✈️ Features
 Flight Management
