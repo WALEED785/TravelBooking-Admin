@@ -134,7 +134,7 @@ const BookingsPage = () => {
                     <TableCell>
                       {type === 'Hotel' ? `${booking.hotelName}` : `${booking.flightName}`}
                     </TableCell>
-                    <TableCell>${booking.totalPrice.toFixed(2)}</TableCell>
+                    <TableCell>PKR-{booking.totalPrice.toFixed(2)}</TableCell>
                     <TableCell>
                       <Chip label={booking.status} color={
                         booking.status === 'Confirmed' ? 'success' : 
